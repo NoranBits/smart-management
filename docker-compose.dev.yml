@@ -58,20 +58,20 @@ services:
   # --------------------------------------
   # Flutter Web Development
   # --------------------------------------
-  flutter-web-dev:
-    build:
-      context: ./frontend/frontend_app
-      dockerfile: web/dockerfile.dev
-    container_name: flutter-web-dev
-    environment:
-      - FLUTTER_ENV=dev
-    ports:
-      - "8082:8081"
-    volumes:
-      - ./frontend/frontend_app:/app
-    working_dir: /app
-    depends_on:
-      - backend
+#  flutter-web-dev:
+#    build:
+#      context: ./frontend/frontend_app
+#      dockerfile: web/dockerfile.dev
+#    container_name: flutter-web-dev
+#    environment:
+#      - FLUTTER_ENV=dev
+#    ports:
+#      - "8082:8081"
+#    volumes:
+#      - ./frontend/frontend_app:/app
+#    working_dir: /app
+#    depends_on:
+#      - backend
 
 # Top-level volumes definition
 volumes:
