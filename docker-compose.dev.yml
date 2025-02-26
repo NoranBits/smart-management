@@ -1,0 +1,174 @@
+# --------------------------------------
+# development environment configuration
+# --------------------------------------
+
+services:
+  # --------------------------------------
+  # postgreSQL Database
+  # --------------------------------------
+  database:
+    build:
+      context: ./database  # Build from database directory
+      dockerfile: Dockerfile
+    container_name: pgDatabase
+    restart: always
+    environment:
+      - DISPLAY=${DISPLAY}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]  # Check if database is ready
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db_data:/var/lib/postgresql/data  # Persistent storage
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql  # Auto-run SQL script
+
+  # --------------------------------------
+  # Go Server Backend Development
+  # --------------------------------------
+  backend:
+    build:
+      context: ./backend-o
+      dockerfile: Dockerfile
+    container_name: goBackend
+    restart: on-failure  # Restart on failure
+    environment:
+      - ../.env
+      - GO_ENV=dev
+      - PORT=${PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - ENABLE_AUTH=${ENABLE_AUTH}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy  # Wait for database to be healthy
+    volumes:
+      - ./backend:/app  # Mount backend code for live reload
+
+  # --------------------------------------
+  # Flutter Web Development
+  # --------------------------------------
+  flutter-web-dev:
+    build:
+      context: ./frontend/frontend_app
+      dockerfile: web/dockerfile.dev
+    container_name: flutter-web-dev
+    environment:
+      - FLUTTER_ENV=dev
+    ports:
+      - "8082:8081"
+    volumes:
+      - ./frontend/frontend_app:/app
+    working_dir: /app
+    depends_on:
+      - backend
+
+# Top-level volumes definition
+volumes:
+  db_data:
+
+# --------------------------------------
+# TODO: Adjust the following configurations
+# --------------------------------------
+
+# --------------------------------------
+# Flutter Windows Development
+# --------------------------------------
+# # Flutter Windows Live development
+# flutter-windows-dev:
+#   build:
+#     context: ./frontend/frontend_app
+#     dockerfile: windows/dockerfile.dev
+#   container_name: flutter-windows-dev
+#   volumes:
+#     - ./frontend/frontend_app:/app
+#   depends_on:
+#     - goBackend
+#
+# # Flutter Windows Debug Build
+# flutter-windows-debug:
+#   build:
+#     context: ./frontend/frontend_app
+#     dockerfile:  windows/dockerfile.debug
+#   container_name: flutter-windows-debug
+#   volumes:
+#       ./frontend/frontend_app:/app
+#     - ./frontend/frontend_app/windows/appbuild/debug:/app
+#   depends_on:
+#     - backend
+#
+# --------------------------------------
+# Flutter Linux Development
+# --------------------------------------
+# # Flutter Linux Live development
+# flutter-linux-dev:
+#   build:
+#     context: ./frontend/frontend_app
+#     dockerfile: linux/dockerfile.dev
+#   container_name: flutter-linux-dev
+#   environment:
+#     - DISPLAY=${DISPLAY}
+#   volumes:
+#     - ./frontend/frontend_app:/app
+#     - /tmp/.X11-unix:/tmp/.X11-unix
+#   network_mode: "host"
+#   depends_on:
+#     - goBackend
+#
+# # Flutter Linux Debug Build
+# flutter-linux-debug:
+#   build:
+#     context: ./frontend/frontend_app
+#     dockerfile: linux/dockerfile.debug
+#   container_name: flutter-linux-debug
+#   environment:
+#     - DISPLAY=${DISPLAY}
+#   volumes:
+#     - ./frontend/frontend_app:/app
+#     - ./frontend/frontend_app/linux/appbuild/debug:/app
+#     - /tmp/.X11-unix:/tmp/.X11-unix
+#   depends_on:
+#     - goBackend
+#
+# --------------------------------------
+# Flutter Android Development
+# --------------------------------------
+# # Flutter Android Live development
+# flutter-android-dev:
+#   build:
+#     context: ./frontend/frontend_app
+#     dockerfile: android/dockerfile.dev
+#   container_name: flutter-android-dev
+#   environment:
+#     - FLUTTER_ENV=dev
+#   ports:
+#     - "5037:5037"  # ADB
+#     - "8200:8200"  # Flutter hot reload
+#   volumes:
+#     - ./frontend/frontend_app/android:/app
+#     - /dev/bus/usb:/dev/bus/usb  # USB debugging for Android devices
+#   privileged: true
+#   depends_on:
+#     - backend
+#
+# # Flutter Android Debug Build
+# flutter-android-debug:
+#   build:
+#     context: ./frontend/frontend_app
+#     dockerfile: android/dockerfile.debug
+#   container_name: flutter-android-debug
+#   volumes:
+#     - ./frontend/frontend_app/android/appbuild/debug:/app
+#     - /dev/bus/usb:/dev/bus/usb  # USB debugging for Android devices
+#   depends_on:
+#     - backend

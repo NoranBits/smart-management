@@ -1,0 +1,51 @@
+# -------------------
+# Build Stage for Go
+# -------------------
+
+# Use the official Golang image
+FROM golang:1.23 AS builder
+
+WORKDIR /app
+
+# Copy Go module files and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy backend source code
+COPY . .
+
+# Install Air
+RUN go install github.com/air-verse/air@latest
+
+# Build the Go server
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go
+
+# --------------------
+# Runtime Stage for Go
+# --------------------
+
+FROM golang:1.23-alpine
+
+WORKDIR /root/
+
+# Install required dependencies
+RUN apk add --no-cache libc6-compat
+
+# Copy built server binary and Air
+COPY --from=builder /app/server .
+
+COPY --from=builder /go/bin/air /usr/local/bin/air 
+
+# Ensure binaries are executable
+RUN chmod +x /root/server /usr/local/bin/air
+
+# Copy Air config file if available
+COPY .air.toml ./
+
+# Copy backend environment file
+COPY .env ./
+
+# Set Air as the default command
+CMD ["./server"]
+
+
