@@ -1,0 +1,17 @@
+# --------------------------
+# Dockerfile for PostgreSQL
+# --------------------------
+
+# Use the official PostgreSQL image
+FROM postgres:17
+
+# Set environment variables
+ENV POSTGRES_USER=${POSTGRES_USER}
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+ENV POSTGRES_DB=${POSTGRES_DB}
+
+# Copy SQL script to initialize the database
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# Expose PostgreSQL port
+EXPOSE 5432

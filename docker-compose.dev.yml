@@ -34,12 +34,12 @@ services:
   # --------------------------------------
   backend:
     build:
-      context: ./backend-o
+      context: ./backend  # Build from backend directory
       dockerfile: Dockerfile
     container_name: goBackend
     restart: on-failure  # Restart on failure
     environment:
-      - ../.env
+      - ./.env
       - GO_ENV=dev
       - PORT=${PORT}
       - LOG_LEVEL=${LOG_LEVEL}
