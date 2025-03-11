@@ -1,6 +1,6 @@
 @echo off
 REM ----------------------------
-REM Docker Compose Rebuild Tool with Build Retry
+REM Docker Compose Rebuild Tool
 REM ----------------------------
 
 REM Set the default compose file
@@ -14,6 +14,19 @@ echo Using compose file: %COMPOSE_FILE%
 REM Confirm before proceeding
 set /p CONTINUE=This will stop and remove all containers, networks, volumes, and images. Continue? (y/n): 
 if /i not "%CONTINUE%"=="y" exit /b
+
+REM Confirm removing Swagger docs
+echo Generating Swagger documentation...
+IF EXIST ".\backend\docs" (
+    echo Removing existing docs directory...
+    rmdir /s /q ".\backend\docs"
+)
+
+REM Swagger docs generation
+echo Initializing Swagger documentation...
+cd backend
+swag init --parseDependency --dir ./server --generalInfo main.go
+cd ..
 
 REM Stop and remove all containers, networks, volumes, and remove orphans
 docker-compose -f %COMPOSE_FILE% down --rmi all --volumes --remove-orphans

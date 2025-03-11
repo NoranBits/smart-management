@@ -8,12 +8,16 @@ import (
 	"net/http"
 	"time"
 
+	_ "backend_server/docs"
+
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	handler "backend_server/internal/handler"
 	repository "backend_server/internal/repository"
 	service "backend_server/service"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chi "github.com/go-chi/chi/v5"
+	middleware "github.com/go-chi/chi/v5/middleware"
 )
 
 // RouterDependencies groups dependencies required by the router.
@@ -38,6 +42,9 @@ func NewRouter(repo repository.RepositoryInterface) http.Handler {
 	// Mount user API routes.
 	userService := service.NewUserService(repo)
 	r.Mount("/api/users", handler.UserRouter(userService))
+
+	// Swagger UI
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	return r
 }

@@ -26,6 +26,12 @@ func UserRouter(svc *service.UserService) http.Handler {
 }
 
 // listUsers returns an HTTP handler that writes a JSON-encoded list of users to the response.
+// @Summary List users
+// @Description Retrieves a list of all users.
+// @Tags Users
+// @Produce json
+// @Success 200 {array} dto.UserDTO
+// @Router / [get]
 func listUsers(svc *service.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		users, err := svc.ListUsers()
@@ -39,6 +45,15 @@ func listUsers(svc *service.UserService) http.HandlerFunc {
 }
 
 // getUser returns an HTTP handler that fetches a single user by their ID.
+// @Summary Get user by ID
+// @Description Fetch a user based on provided ID.
+// @Tags Users
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} dto.UserDTO
+// @Failure 400 {string} string "Invalid user id"
+// @Failure 404 {string} string "User not found"
+// @Router /{id} [get]
 func getUser(svc *service.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve the user ID from the URL parameters.
@@ -63,6 +78,16 @@ func getUser(svc *service.UserService) http.HandlerFunc {
 }
 
 // createUser returns an HTTP handler that creates a new user from a JSON payload.
+// @Summary Create user
+// @Description Creates a new user.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body model.User true "User to create"
+// @Success 201 {object} dto.UserDTO
+// @Failure 400 {string} string "Invalid request payload"
+// @Failure 500 {string} string "Internal server error"
+// @Router / [post]
 func createUser(svc *service.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user model.User

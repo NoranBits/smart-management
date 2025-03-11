@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	_ "backend_server/docs"
 	config "backend_server/internal/config"
 	model "backend_server/internal/model"
 	repository "backend_server/internal/repository"
@@ -15,6 +16,11 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+// @title Backend API
+// @version 1.0
+// @description Backend API documentation.
+// @host localhost:8080
+// @BasePath /
 func main() {
 
 	// Load .env file
