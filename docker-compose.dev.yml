@@ -38,8 +38,9 @@ services:
       dockerfile: Dockerfile
     container_name: goBackend
     restart: on-failure  # Restart on failure
+    env_file:
+    - ./.env
     environment:
-      - ./.env
       - GO_ENV=dev
       - PORT=${PORT}
       - LOG_LEVEL=${LOG_LEVEL}
