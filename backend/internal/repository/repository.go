@@ -14,6 +14,7 @@ import (
 type RepositoryInterface interface {
 	// User-related methods
 	GetUserByID(id uint) (*model.User, error)
+	GetUserByEmail(email string) (*model.User, error)
 	GetAllUsers() ([]model.User, error)
 	CreateUser(user *model.User) error
 	UpdateUser(user *model.User) error
@@ -34,6 +35,15 @@ func NewRepository(db *gorm.DB) RepositoryInterface {
 func (r *repository) GetUserByID(id uint) (*model.User, error) {
 	var user model.User
 	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetUserByEmail retrieves a single user by email.
+func (r *repository) GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
+	if err := r.db.First(&user, "email = ?", email).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil

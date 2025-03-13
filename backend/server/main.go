@@ -4,9 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	_ "backend_server/docs"
 	config "backend_server/internal/config"
-	model "backend_server/internal/model"
 	repository "backend_server/internal/repository"
 	router "backend_server/internal/router"
 	logger "backend_server/pkg/logger"
@@ -16,11 +14,6 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-// @title Backend API
-// @version 1.0
-// @description Backend API documentation.
-// @host localhost:8080
-// @BasePath /
 func main() {
 
 	// Load .env file
@@ -43,7 +36,7 @@ func main() {
 	db := repository.NewDB(cfg)
 
 	// Optionally run migrations.
-	db.AutoMigrate(&model.User{})
+	//db.AutoMigrate(&model.User{})
 
 	// Create repository instance for additional repository methods.
 	repo := repository.NewRepository(db)

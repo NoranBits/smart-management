@@ -8,6 +8,8 @@ import (
 	DTO "backend_server/DTO"
 	model "backend_server/internal/model"
 	repository "backend_server/internal/repository"
+	auth "backend_server/pkg/auth"
+	"fmt"
 
 	"errors"
 )
@@ -35,6 +37,17 @@ func (s *UserService) GetUserByID(id uint) (*model.User, error) {
 	return user, nil
 }
 
+func (s *UserService) GetUserByEmail(email string) (*model.User, error) {
+	user, err := s.Repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
+}
+
 // ListUsers retrieves all users.
 func (s *UserService) ListUsers() ([]model.User, error) {
 	return s.Repo.GetAllUsers()
@@ -42,9 +55,33 @@ func (s *UserService) ListUsers() ([]model.User, error) {
 
 // CreateUser handles the operation to create a new user.
 func (s *UserService) CreateUser(u *model.User) error {
-	// Additional logic, e.g., input validation, password hashing, etc.
-
+	hashedPwd, err := auth.HashPassword(u.Password)
+	if err != nil {
+		return fmt.Errorf("error hashing password: %v", err)
+	}
+	u.Password = string(hashedPwd)
 	return s.Repo.CreateUser(u)
+}
+
+// Pseudocode for user login
+func (s *UserService) LoginUser(email, password string) error {
+	user, err := s.Repo.GetUserByEmail(email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	matched, err := auth.CheckPassword(user.Password, password)
+	if err != nil {
+		// Something went wrong comparing the hash
+		return err
+	}
+	if !matched {
+		// Password is incorrect
+		return errors.New("invalid credentials")
+	}
+
+	// TODO: proceed with session / JWT token creation, etc.
+	return nil
 }
 
 // ConvertUser maps an internal model.User to DTO.UserDTO.
