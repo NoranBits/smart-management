@@ -9,7 +9,6 @@ import (
 	model "backend_server/internal/model"
 	repository "backend_server/internal/repository"
 	auth "backend_server/pkg/auth"
-	"fmt"
 
 	"errors"
 )
@@ -55,12 +54,27 @@ func (s *UserService) ListUsers() ([]model.User, error) {
 
 // CreateUser handles the operation to create a new user.
 func (s *UserService) CreateUser(u *model.User) error {
+	// Hash the password before creating the user
 	hashedPwd, err := auth.HashPassword(u.Password)
 	if err != nil {
-		return fmt.Errorf("error hashing password: %v", err)
+		return errors.New("error hashing password: %v")
 	}
 	u.Password = string(hashedPwd)
 	return s.Repo.CreateUser(u)
+}
+
+func (s *UserService) DeleteUser(id uint) error {
+	return s.Repo.DeleteUser(id)
+}
+
+func (s *UserService) UpdateUser(u *model.User) error {
+	// Hash the password before updating the user
+	hashedPwd, err := auth.HashPassword(u.Password)
+	if err != nil {
+		return errors.New("error hashing password: %v")
+	}
+	u.Password = string(hashedPwd)
+	return s.Repo.UpdateUser(u)
 }
 
 // Pseudocode for user login
@@ -87,8 +101,10 @@ func (s *UserService) LoginUser(email, password string) error {
 // ConvertUser maps an internal model.User to DTO.UserDTO.
 func ConvertUser(u *model.User) DTO.UserDTO {
 	return DTO.UserDTO{
-		ID:    u.ID,
-		Name:  u.Name,
-		Email: u.Email,
+		ID:     u.ID,
+		Name:   u.Name,
+		Email:  u.Email,
+		Role:   u.Role,
+		Active: u.Active,
 	}
 }
