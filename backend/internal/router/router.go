@@ -39,5 +39,11 @@ func NewRouter(repo repository.RepositoryInterface) http.Handler {
 	userService := service.NewUserService(repo)
 	r.Mount("/api/users", handler.UserRouter(userService))
 
+	// Authentication routes
+	r.Route("/api/auth", func(r chi.Router) {
+		r.Post("/register", handler.RegisterHandler(userService))
+		r.Post("/login", handler.LoginHandler(userService))
+	})
+
 	return r
 }

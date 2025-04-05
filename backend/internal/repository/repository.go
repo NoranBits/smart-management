@@ -35,17 +35,20 @@ func NewRepository(db *gorm.DB) RepositoryInterface {
 
 // GetUserByID retrieves a single user by ID.
 func (r *repository) GetUserByID(id uint) (*model.User, error) {
-	var user model.User
-	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
+	var user *model.User
+	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 // GetUserByEmail retrieves a single user by email.
 func (r *repository) GetUserByEmail(email string) (*model.User, error) {
 	var user model.User
-	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := r.db.Unscoped().Where("email = ?", email).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -60,7 +63,7 @@ func (r *repository) GetAllUsers() ([]model.User, error) {
 	return users, nil
 }
 
-// CreateUser inserts a new user record.
+// CreateUser beszúr egy új felhasználót.
 func (r *repository) CreateUser(user *model.User) error {
 	if user.Email == "" || user.Password == "" || user.Name == "" {
 		return fmt.Errorf("missing required fields")
@@ -70,7 +73,18 @@ func (r *repository) CreateUser(user *model.User) error {
 		return fmt.Errorf("error hashing password: %v", err)
 	}
 	user.Password = hashedPwd
-	return r.db.Create(user).Error
+
+	fmt.Println("Creating user:", user) // Log the user data before insertion
+
+	err = r.db.Create(user).Error
+	if err != nil {
+		fmt.Println("Error creating user:", err) // Log the error
+		return err
+	}
+
+	fmt.Println("User created successfully:", user) // Log the user data after insertion
+
+	return nil
 }
 
 // UpdateUser updates an existing user record.

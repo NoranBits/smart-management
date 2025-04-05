@@ -86,6 +86,15 @@ func createUser(svc *service.UserService) http.HandlerFunc {
 			return
 		}
 		defer r.Body.Close()
+
+		// Validation
+		if user.Name == "" || user.Email == "" || user.Password == "" || user.Role == "" {
+			http.Error(w, "Missing required fields", http.StatusBadRequest)
+			return
+		}
+
+		// TODO: Add more robust validation (e.g., email format, password strength)
+
 		// Invoke the service to create the new user.
 		if err := svc.CreateUser(&user); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

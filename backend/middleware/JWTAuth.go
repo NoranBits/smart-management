@@ -1,19 +1,28 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
-func validateToken(tokenString string) bool {
+// CONTEXT Key for storing user information in the request context.
+type contextKey string
+
+const (
+	userIDKey   contextKey = "userID"
+	userRoleKey contextKey = "userRole"
+)
+
+func validateToken(tokenString string) (jwt.MapClaims, bool) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		fmt.Println("JWT_SECRET is not set")
-		return false
+		return nil, false
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -23,24 +32,27 @@ func validateToken(tokenString string) bool {
 		}
 		return []byte(secret), nil
 	})
-
 	if err != nil {
 		fmt.Printf("Token parsing error: %v\n", err)
-		return false
+		return nil, false
 	}
-
-	return token.Valid
+	if !token.Valid {
+		return nil, false
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		return claims, true
+	}
+	return nil, false
 }
 
 // JWTAuth is a middleware that validates the JWT provided in the "Authorization" header.
 func JWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// DEBUG Check if authentication is disabled via environment variable.
-		if os.Getenv("ENABLE_AUTH") == "false" {
-			// UNSECURE Skip token validation and directly call the next handler.
-			next.ServeHTTP(w, r)
-			return
-		}
+		//		if os.Getenv("ENABLE_AUTH") == "false" {
+		//		next.ServeHTTP(w, r)
+		//		return
+		//	}
 
 		// Extract token from the Authorization header.
 		// It should be sent as: "Bearer <token>"
@@ -58,12 +70,39 @@ func JWTAuth(next http.Handler) http.Handler {
 		}
 		tokenString := parts[1]
 
-		if !validateToken(tokenString) {
+		claims, valid := validateToken(tokenString)
+		if !valid {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+		// Extract user information from claims and add to context
+		userID := claims["sub"].(string)
+		userRole := claims["role"].(string)
 
-		// If token is valid, pass the request to the next handler.
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
+		ctx = context.WithValue(ctx, userRoleKey, userRole)
+
+		// Call the next handler with the new context
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// GetUserIDFromContext retrieves the user ID from the context.
+func GetUserIDFromContext(ctx context.Context) string {
+	userID, ok := ctx.Value(userIDKey).(string)
+	if !ok {
+		fmt.Println("userID not found in context")
+		return "userID not found"
+	}
+	return userID
+}
+
+// GetUserRoleFromContext retrieves the user role from the context.
+func GetUserRoleFromContext(ctx context.Context) string {
+	userRole, ok := ctx.Value(userRoleKey).(string)
+	if !ok {
+		fmt.Println("userRole not found in context")
+		return "userRole not found"
+	}
+	return userRole
 }

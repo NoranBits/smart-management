@@ -9,8 +9,13 @@ import (
 	model "backend_server/internal/model"
 	repository "backend_server/internal/repository"
 	auth "backend_server/pkg/auth"
+	"fmt"
+	"os"
+	"time"
 
 	"errors"
+
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 // UserService defines operations for users.
@@ -77,25 +82,53 @@ func (s *UserService) UpdateUser(u *model.User) error {
 	return s.Repo.UpdateUser(u)
 }
 
-// Pseudocode for user login
+// LoginUser handles the operation to authenticate a user.
 func (s *UserService) LoginUser(email, password string) error {
 	user, err := s.Repo.GetUserByEmail(email)
 	if err != nil {
-		return errors.New("user not found")
+		fmt.Println("Error getting user by email:", err)
+		return errors.New("invalid credentials") // More generic error message
 	}
+
+	fmt.Println("User found:", user) // Log the user
 
 	matched, err := auth.CheckPassword(user.Password, password)
 	if err != nil {
-		// Something went wrong comparing the hash
-		return err
+		fmt.Println("Error comparing passwords:", err) // Log the error
+		return errors.New("invalid credentials")
 	}
 	if !matched {
-		// Password is incorrect
+		fmt.Println("Passwords do not match") // Log the mismatch
 		return errors.New("invalid credentials")
 	}
 
-	// TODO: proceed with session / JWT token creation, etc.
+	// Authentication successful
 	return nil
+}
+
+// GenerateJWT generates a JWT token for the user.
+func (s *UserService) GenerateJWT(email string) (string, error) {
+	user, err := s.Repo.GetUserByEmail(email)
+	if err != nil {
+		return "", errors.New("user not found")
+	}
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", fmt.Errorf("JWT_SECRET is not set")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":  user.ID,
+		"role": user.Role,
+		"exp":  time.Now().Add(time.Hour * 2).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %v", err)
+	}
+
+	return tokenString, nil
 }
 
 // ConvertUser maps an internal model.User to DTO.UserDTO.
