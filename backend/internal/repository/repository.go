@@ -6,6 +6,8 @@ package repository
 
 import (
 	model "backend_server/internal/model"
+	auth "backend_server/pkg/auth"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -60,6 +62,14 @@ func (r *repository) GetAllUsers() ([]model.User, error) {
 
 // CreateUser inserts a new user record.
 func (r *repository) CreateUser(user *model.User) error {
+	if user.Email == "" || user.Password == "" || user.Name == "" {
+		return fmt.Errorf("missing required fields")
+	}
+	hashedPwd, err := auth.HashPassword(user.Password)
+	if err != nil {
+		return fmt.Errorf("error hashing password: %v", err)
+	}
+	user.Password = hashedPwd
 	return r.db.Create(user).Error
 }
 

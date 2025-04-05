@@ -81,8 +81,6 @@ func getUser(svc *service.UserService) http.HandlerFunc {
 func createUser(svc *service.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user model.User
-
-		// Decode the incoming JSON payload into the User model.
 		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
@@ -163,5 +161,4 @@ func updateUser(svc *service.UserService) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusNoContent) // 204 No Content response status tells the client that the request has succeeded
 	}
-
 }
