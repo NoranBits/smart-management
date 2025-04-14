@@ -41,7 +41,7 @@ func ValidatePasswordStrength(password string) bool {
 	hasUpper := false
 	hasLower := false
 	hasNumber := false
-	hasSpecial := true // TODO: Check for special characters if role is admin/manager
+	hasSpecial := true // TODO: Check for special characters if role is admin%
 	for _, char := range password {
 		switch {
 		case 'A' <= char && char <= 'Z':

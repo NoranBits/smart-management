@@ -84,26 +84,36 @@ func (s *UserService) UpdateUser(u *model.User) error {
 
 // LoginUser handles the operation to authenticate a user.
 func (s *UserService) LoginUser(email, password string) error {
-	user, err := s.Repo.GetUserByEmail(email)
-	if err != nil {
-		fmt.Println("Error getting user by email:", err)
-		return errors.New("invalid credentials") // More generic error message
-	}
+    user, err := s.Repo.GetUserByEmail(email)
+    if err != nil {
+        fmt.Println("Error getting user by email:", err)
+        return errors.New("invalid credentials") // More generic error message
+    }
 
-	fmt.Println("User found:", user) // Log the user
+    if user == nil {
+        fmt.Println("User not found")
+        return errors.New("invalid credentials")
+    }
 
-	matched, err := auth.CheckPassword(user.Password, password)
-	if err != nil {
-		fmt.Println("Error comparing passwords:", err) // Log the error
-		return errors.New("invalid credentials")
-	}
-	if !matched {
-		fmt.Println("Passwords do not match") // Log the mismatch
-		return errors.New("invalid credentials")
-	}
+    if user.DeletedAt.Valid { // Check if DeletedAt is NOT NULL
+        fmt.Println("Account is inactive")
+        return errors.New("account is inactive")
+    }
 
-	// Authentication successful
-	return nil
+    fmt.Println("User found:", user) // Log the user
+
+    matched, err := auth.CheckPassword(user.Password, password)
+    if err != nil {
+        fmt.Println("Error comparing passwords:", err) // Log the error
+        return errors.New("invalid credentials")
+    }
+    if !matched {
+        fmt.Println("Passwords do not match") // Log the mismatch
+        return errors.New("invalid credentials")
+    }
+
+    // Authentication successful
+    return nil
 }
 
 // GenerateJWT generates a JWT token for the user.
